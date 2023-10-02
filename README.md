@@ -1,5 +1,8 @@
 # War: TTY Edition
 
+![Title screen of WAR TUI!](./screenshots/screenshot_1.png)
+![Gameplay of WAR TUI!](./screenshots/screenshot_2.png)
+
 A version of the War card game for terminal emulators. Features advanced terminal graphics thanks to ncurses!
 
 ## How to play

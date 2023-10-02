@@ -2,6 +2,7 @@
 #include <array>
 #include <random>
 #include <vector>
+#include <exception>
 
 #include "card.cpp"
 
@@ -25,7 +26,7 @@ public:
 
 	bool has_cards()
 	{
-		return !this->cards.empty();
+		return this->cards.size() > 0;
 	}
 
 	int count()
@@ -35,10 +36,17 @@ public:
 
 	Card draw_card()
 	{
-		Card card = this->cards.back();
-		this->cards.pop_back();
+		if (this->count() == 0) 
+		{
+			throw std::runtime_error("No cards remaining.");
+		} 
+		else
+		{
+			Card card = this->cards.back();
+			this->cards.pop_back();
 
-		return card;
+			return card;
+		}
 	}
 
 	void insert_card(Card card)

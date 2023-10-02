@@ -4,12 +4,31 @@
 #include <ncurses.h>
 #include <chrono>
 #include <thread>
+#include <exception>
 
 #include "deck.cpp"
 
 using namespace std;
 
-bool draw_cards(Deck& player_deck, Deck& cpu_deck)
+void handle_game_over(Deck& player_deck, Deck& cpu_deck)
+{
+	clear();
+	refresh();
+
+	if (!player_deck.has_cards())
+	{
+		mvprintw(4,2, "You are the loser, tough luck.");
+	}
+	else
+	{
+		mvprintw(4,2, "You are the winner, great job mashing that spacebar!");
+	}
+
+	refresh();
+	getch();
+}
+
+bool draw_cards(Deck& player_deck, Deck& cpu_deck, bool is_tie = false)
 {
 	clear();
 	refresh();
@@ -18,24 +37,63 @@ bool draw_cards(Deck& player_deck, Deck& cpu_deck)
 	Card cpu_card = cpu_deck.draw_card();
 
 	mvprintw(4,2, ("Your deck: " + to_string(player_deck.count()) + " cards").c_str());
-	player_card.draw_back(2,5);
-	player_card.draw_back(4,5);
-	player_card.draw_back(6,5);
 
-	cpu_card.draw_back(31,25);
-	cpu_card.draw_back(29,25);
-	cpu_card.draw_back(27,25);
+	try
+	{
+		player_card.draw_back(2,5);
+		player_card.draw_back(4,5);
+		player_card.draw_back(6,5);
+
+		cpu_card.draw_back(31,25);
+		cpu_card.draw_back(29,25);
+		cpu_card.draw_back(27,25);		
+	}
+	catch (const std::exception& ex)
+	{
+		handle_game_over(player_deck, cpu_deck);
+	}
+
 	mvprintw(37,25, ("CPU deck: " + to_string(cpu_deck.count()) + " cards").c_str());
 
-	player_card.draw_back(8,5);
-	cpu_card.draw_back(25,25);
+	try
+	{
+		player_card.draw_back(8,5);
+		cpu_card.draw_back(25,25);	
+	}
+	catch (const std::exception& ex)
+	{
+		handle_game_over(player_deck, cpu_deck);
+	}
 
 	refresh();
 
 	std::this_thread::sleep_for(std::chrono::milliseconds(300));
 
-	player_card.draw_front(8,5);
-	cpu_card.draw_front(25,25);
+	if (is_tie)
+	{
+		try
+		{
+			player_card.draw_back(30,5);
+			player_card.draw_back(32,5);
+			player_card.draw_back(34,5);	
+		}
+		catch (const std::exception& ex)
+		{
+			handle_game_over(player_deck, cpu_deck);
+		}
+		
+	}
+	
+	try
+	{
+		player_card.draw_front(8,5);
+		cpu_card.draw_front(25,25);
+	}
+	catch (const std::exception& ex)
+	{
+		handle_game_over(player_deck, cpu_deck);
+	}
+
 
 	refresh();
 
@@ -50,7 +108,7 @@ bool draw_cards(Deck& player_deck, Deck& cpu_deck)
 		mvprintw(22, 12, "Press a key to draw continue...");
 		getch();
 
-		if (draw_cards(player_deck, cpu_deck))
+		if (draw_cards(player_deck, cpu_deck, true))
 		{
 			// Player won draw
 			won = true;
@@ -78,7 +136,14 @@ bool draw_cards(Deck& player_deck, Deck& cpu_deck)
 		player_deck.insert_card(player_card);
 		player_deck.insert_card(cpu_card);
 
-		mvprintw(20, 12, "You won!");
+		if (is_tie)
+		{
+			mvprintw(18, 12, "You won the tie!");	
+		}
+		else
+		{
+			mvprintw(20, 12, "You won!");	
+		}
 	}
 	else
 	{
@@ -86,7 +151,14 @@ bool draw_cards(Deck& player_deck, Deck& cpu_deck)
 		cpu_deck.insert_card(cpu_card);
 		cpu_deck.insert_card(player_card);
 
-		mvprintw(20, 12, "You lost!");
+		if (is_tie)
+		{
+			mvprintw(18, 12, "You lost the tie!");
+		}
+		else
+		{
+			mvprintw(20, 12, "You lost!");	
+		}
 	}
 
 	mvprintw(22, 12, "Press a key to draw again...");
@@ -107,9 +179,16 @@ void game_loop()
 	mvprintw(23, 20, "Press any key to draw!");
 	getch();
 
-	while (player_deck.has_cards() == true && cpu_deck.has_cards() == true)
+	while (player_deck.has_cards() && cpu_deck.has_cards())
 	{
-		draw_cards(player_deck, cpu_deck);
+		try
+		{
+			draw_cards(player_deck, cpu_deck);
+		}
+		catch (const std::exception& ex)
+		{
+			handle_game_over(player_deck, cpu_deck);
+		}
 	}
 }
 
